@@ -1,48 +1,56 @@
+import operator
+
 import nltk
 from nltk.corpus import cmudict
-d = cmudict.dict()
 import textstat
 from textstat.textstat import easy_word_set
-import argparse
 import re
+d = cmudict.dict()
+gradeLevels = {'COLLEGE_GRAD': {'score': 5, 'label': 'College Graduate and higher'},
+               'COLLEGE_STUDENT': {'score': 4, 'label': 'College Student'},
+               'HIGH_SCHOOL_STUDENT': {'score': 3, 'label': 'High School Student'},
+               'TEN_TO_EIGHT_STUDENT': {'score': 2, 'label': '10th to 8th grade'},
+               'SEVEN_TO_FIVE_STUDENT': {'score': 1, 'label': '7th to 5th grade'},
+               'KIDS': {'score': 0,'label': '4th grade and lower'}}
+metrics = {'flesch':{'label':'Flesch Readability Ease'},
+           'dchall':{'label':'Dale Chall Readability'},
+           'gfog':{'label':'Gunning Fog'},
+           'ari':{'label':'Automated Readability Index'}}
 
 class DocumentComplexity:
-    def __init__(self, doc):
-
-        self.__doc = open(doc).read()
-        self.__doc = self.preprocess(self.__doc)
-        self.__docWords = self.getTotalWords(self.__doc)
+    def __init__(self, text):
+        self.__doc = self.preprocess(text)
+        self.__docWords = self.getTotalWords()
         self.__totalWords = textstat.lexicon_count(self.__doc, removepunct=True)
         self.__totalCharacters = textstat.char_count(self.__doc, ignore_spaces=True)
-        self.__totalSentences = self.getSentencesCount(self.__doc)
-        self.__totalSyllables = self.getSyllablesCount(self.__docWords)
+        self.__totalSentences = self.getSentencesCount()
+        self.__totalSyllables = self.getSyllablesCount()
         # self.__totalSyllables = textstat.syllable_count(self.__doc)
-        self.__polySyllableCount = self.getPolySyllableCount(self.__docWords)
-        print("Syllables, Words, Sentences", self.__totalSyllables, self.__totalWords, self.__totalSentences)
-        pass
+        self.__polySyllableCount = self.getPolySyllableCount()
+        # print("Syllables, Words, Sentences", self.__totalSyllables, self.__totalWords, self.__totalSentences)
 
-    def getTotalWords(self, doc):
+    def getTotalWords(self):
         """
         Returns total words of the document as list
         :param doc:
         :return:
         """
         totalWords = []
-        for line in doc.splitlines():
+        for line in self.__doc.splitlines():
             totalWords += line.split()
         return totalWords
 
-    def getSentencesCount(self, doc):
-            return max(1, len(re.sub(r'[^\.!?]', '', doc)))
+    def getSentencesCount(self):
+            return max(1, len(re.sub(r'[^\.!?]', '', self.__doc)))
 
-    def getSyllablesCount(self, words):
+    def getSyllablesCount(self):
         """
         Returns total syllables of the words array
         :param words:
         :return:
         """
         syllableCount = 0
-        for word in words:
+        for word in self.__docWords:
             syllableCount += self.getWordSyllable(word)
         return syllableCount
 
@@ -100,10 +108,10 @@ class DocumentComplexity:
             count += 1
         return count
 
-    def getPolySyllableCount(self, words, gunning=False):
+    def getPolySyllableCount(self, gunning=False):
         count = 0
         ignore = False
-        for word in words:
+        for word in self.__docWords:
             if gunning:
                 pos = self.getPosTag(word)
                 if pos == 'NNP' or pos == 'NNPS' or pos == 'CC':
@@ -143,27 +151,25 @@ class DocumentComplexity:
         readingScore = 206.835 - (1.015 * (float(self.__totalWords)/self.__totalSentences))-(84.6*(self.__totalSyllables/float(self.__totalWords)))
         return readingScore
 
-    def fleschReadingGrade(self, score):
+    def fleschReadingGrade(self):
         """
         Returns Flesch Reading grade based on the score
         :param score:
         :return:
         """
-        grade = ''
+        score = self.fleschReadingScore()
         if score >= 90:
-            grade = '5th grade or lower'
-        elif score >= 80 and score < 90:
-            grade = '6th grade'
-        elif score >= 70 and score < 80:
-            grade = '7th grade'
+            grade = gradeLevels.get('KIDS')
+        elif score >= 70 and score < 90:
+            grade = gradeLevels.get('SEVEN_TO_FIVE_STUDENT')
         elif score >= 60 and score < 70:
-            grade = '8th and 9th grade'
+            grade = gradeLevels.get('TEN_TO_EIGHT_STUDENT')
         elif score >= 50 and score < 60:
-            grade = '10th to 12th grade'
+            grade = gradeLevels.get('HIGH_SCHOOL_STUDENT')
         elif score >= 30 and score < 50:
-            grade = 'College Student'
+            grade = gradeLevels.get('COLLEGE_STUDENT')
         else:
-            grade = 'College graduate'
+            grade = gradeLevels.get('COLLEGE_GRAD')
         return grade
 
     def daleChallReadabilityScore(self):
@@ -183,24 +189,23 @@ class DocumentComplexity:
             rawScore += 3.6365
         return rawScore
 
-    def daleChallReadabilityGrade(self, score):
+    def daleChallReadabilityGrade(self):
         """
         Returns Dale Chall Readability Grade based on the score
         :param grade:
         :return:
         """
+        score = self.daleChallReadabilityScore()
         if score >= 9:
-            grade = 'College Student'
+            grade = gradeLevels.get('COLLEGE_STUDENT')
         elif score >= 8 and score < 9:
-            grade = '11th to 12th grade'
+            grade = gradeLevels.get('HIGH_SCHOOL_STUDENT')
         elif score >= 7 and score < 8:
-            grade = '9th to 10th grade'
-        elif score >= 6 and score < 7:
-            grade = '7th to 8th grade'
-        elif score >= 5 and score < 6:
-            grade = '5th to 6th grade'
+            grade = gradeLevels.get('TEN_TO_EIGHT_STUDENT')
+        elif score >= 5 and score < 7:
+            grade = gradeLevels.get('SEVEN_TO_FIVE_STUDENT')
         else:
-            grade = '4th grade and lower'
+            grade = gradeLevels.get('KIDS')
         return grade
 
 
@@ -210,28 +215,29 @@ class DocumentComplexity:
         Grade level= 0.4 * ( (average sentence length) + (percentage of Hard Words) )
         :return:
         """
-        polySyllableCount = self.getPolySyllableCount(self.__docWords, True)
+        polySyllableCount = self.getPolySyllableCount(True)
         gradeLevel = 0.4*(self.__totalWords/float(self.__totalSentences)) + ((polySyllableCount /self.__totalWords) * 100)
         return gradeLevel
 
-    def gunningFogGrade(self, score):
+    def gunningFogGrade(self):
         """
         Returns Gunning Fog Grade
         :param score:
         :return:
         """
+        score = self.gunningFogScore()
         if score >= 17:
-            grade = 'College graduate'
+            grade = gradeLevels.get('COLLEGE_GRAD')
         elif score >= 13 and score < 17:
-            grade = 'College student'
-        elif score >= 9 and score < 12:
-            grade = 'High School student'
-        elif score >= 8 and score < 9:
-            grade = '8th grade'
-        elif score >= 7 and score < 8:
-            grade = '7th grade'
+            grade = gradeLevels.get('COLLEGE_STUDENT')
+        elif score >= 11 and score < 12:
+            grade = gradeLevels.get('HIGH_SCHOOL_STUDENT')
+        elif score >= 9 and score < 11:
+            grade = gradeLevels.get('TEN_TO_EIGHT_STUDENT')
+        elif score >= 6 and score < 9:
+            grade = gradeLevels.get('SEVEN_TO_FIVE_STUDENT')
         else:
-            grade = '6th grade and lower'
+            grade = gradeLevels.get('KIDS')
         return grade
 
     def automatedReadabilityIndex(self):
@@ -243,52 +249,52 @@ class DocumentComplexity:
         """
         return (4.71 * (self.__totalCharacters/self.__totalWords)) + (0.5 * ( self.__totalWords/self.__totalSentences)) - 21.34
 
-    def automatedReadabilityGrade(self, score):
+    def automatedReadabilityGrade(self):
         """
         Returns ARI grade
         :param score:
         :return:
         """
+        score = self.automatedReadabilityIndex()
         if score >= 14:
-            grade = 'Professor'
+            grade = gradeLevels.get('COLLEGE_GRAD')
         elif score >= 13 and score < 14:
-            grade = 'College student'
+            grade = gradeLevels.get('COLLEGE_STUDENT')
         elif score >= 10 and score < 13:
-            grade = '10th to 12th grade'
+            grade = gradeLevels.get('HIGH_SCHOOL_STUDENT')
         elif score >= 7 and score < 10:
-            grade = '7th to 9th grade'
+            grade = gradeLevels.get('TEN_TO_EIGHT_STUDENT')
         elif score >= 5 and score < 7:
-            grade = '5th to 6th grade'
+            grade = gradeLevels.get('SEVEN_TO_FIVE_STUDENT')
         else:
-            grade = '4th grade and lower'
+            grade = gradeLevels.get('KIDS')
         return grade
 
+    def getGradeByMetric(self, metric):
+        """
+        Get Metric based score and grade
+        :param metric:
+        :return:
+        """
+        if metric == 'flesch':
+            grade = self.fleschReadingGrade()
+        # elif metric == 'dchall':
+        #     grade = self.daleChallReadabilityGrade()
+        elif metric == 'gfog':
+            grade = self.gunningFogGrade()
+        elif metric == 'ari':
+            grade = self.automatedReadabilityGrade()
+        return grade
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--inputDoc', help='Input Document')
-parser.add_argument('-m', '--metric', help='Metrics to Evaluate. Can take values : flesch, dchall, gfog, ari')
-args = parser.parse_args()
+    def getCommonGrade(self):
+        """
+        Returns Common grade of the document
+        :return:
+        """
+        grades = [self.getGradeByMetric('flesch'), self.getGradeByMetric('gfog'), self.getGradeByMetric('ari')]
+        sorted(grades, key=lambda grade: grade.get('score'))
+        return grades[0]
 
-docComplexityObj = DocumentComplexity(args.inputDoc)
-metric = args.metric
 
-if metric == 'flesch':
-    method = 'Flesch Readability Ease'
-    score = docComplexityObj.fleschReadingScore()
-    grade = docComplexityObj.fleschReadingGrade(score)
-elif metric == 'dchall':
-    method = 'Dale Chall Readability'
-    score = docComplexityObj.daleChallReadabilityScore()
-    grade = docComplexityObj.daleChallReadabilityGrade(score)
-elif metric == 'gfog':
-    method = 'Gunning Fog'
-    score = docComplexityObj.gunningFogScore()
-    grade = docComplexityObj.gunningFogGrade(score)
-elif metric == 'ari':
-    method = 'Automated Readability Index'
-    score = docComplexityObj.automatedReadabilityIndex()
-    grade = docComplexityObj.automatedReadabilityGrade(score)
 
-print('Score : ', score)
-print('Grade : ', grade)
-print('Method : ', method)
+
