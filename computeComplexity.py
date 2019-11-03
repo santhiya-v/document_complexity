@@ -5,7 +5,6 @@ import textstat
 from textstat.textstat import easy_word_set
 import argparse
 import re
-import math
 
 class DocumentComplexity:
     def __init__(self, doc):
@@ -144,6 +143,29 @@ class DocumentComplexity:
         readingScore = 206.835 - (1.015 * (float(self.__totalWords)/self.__totalSentences))-(84.6*(self.__totalSyllables/float(self.__totalWords)))
         return readingScore
 
+    def fleschReadingGrade(self, score):
+        """
+        Returns Flesch Reading grade based on the score
+        :param score:
+        :return:
+        """
+        grade = ''
+        if score >= 90:
+            grade = '5th grade or lower'
+        elif score >= 80 and score < 90:
+            grade = '6th grade'
+        elif score >= 70 and score < 80:
+            grade = '7th grade'
+        elif score >= 60 and score < 70:
+            grade = '8th and 9th grade'
+        elif score >= 50 and score < 60:
+            grade = '10th to 12th grade'
+        elif score >= 30 and score < 50:
+            grade = 'College Student'
+        else:
+            grade = 'College graduate'
+        return grade
+
     def daleChallReadabilityScore(self):
         """
         Returns Dale Chall Readability Score
@@ -161,6 +183,27 @@ class DocumentComplexity:
             rawScore += 3.6365
         return rawScore
 
+    def daleChallReadabilityGrade(self, score):
+        """
+        Returns Dale Chall Readability Grade based on the score
+        :param grade:
+        :return:
+        """
+        if score >= 9:
+            grade = 'College Student'
+        elif score >= 8 and score < 9:
+            grade = '11th to 12th grade'
+        elif score >= 7 and score < 8:
+            grade = '9th to 10th grade'
+        elif score >= 6 and score < 7:
+            grade = '7th to 8th grade'
+        elif score >= 5 and score < 6:
+            grade = '5th to 6th grade'
+        else:
+            grade = '4th grade and lower'
+        return grade
+
+
     def gunningFogScore(self):
         """
         Returns Gunning Fog Score
@@ -171,6 +214,26 @@ class DocumentComplexity:
         gradeLevel = 0.4*(self.__totalWords/float(self.__totalSentences)) + ((polySyllableCount /self.__totalWords) * 100)
         return gradeLevel
 
+    def gunningFogGrade(self, score):
+        """
+        Returns Gunning Fog Grade
+        :param score:
+        :return:
+        """
+        if score >= 17:
+            grade = 'College graduate'
+        elif score >= 13 and score < 17:
+            grade = 'College student'
+        elif score >= 9 and score < 12:
+            grade = 'High School student'
+        elif score >= 8 and score < 9:
+            grade = '8th grade'
+        elif score >= 7 and score < 8:
+            grade = '7th grade'
+        else:
+            grade = '6th grade and lower'
+        return grade
+
     def automatedReadabilityIndex(self):
         """
         Returns ARI of the document
@@ -180,79 +243,52 @@ class DocumentComplexity:
         """
         return (4.71 * (self.__totalCharacters/self.__totalWords)) + (0.5 * ( self.__totalWords/self.__totalSentences)) - 21.34
 
+    def automatedReadabilityGrade(self, score):
+        """
+        Returns ARI grade
+        :param score:
+        :return:
+        """
+        if score >= 14:
+            grade = 'Professor'
+        elif score >= 13 and score < 14:
+            grade = 'College student'
+        elif score >= 10 and score < 13:
+            grade = '10th to 12th grade'
+        elif score >= 7 and score < 10:
+            grade = '7th to 9th grade'
+        elif score >= 5 and score < 7:
+            grade = '5th to 6th grade'
+        else:
+            grade = '4th grade and lower'
+        return grade
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--inputDoc', help='Input Document')
+parser.add_argument('-m', '--metric', help='Metrics to Evaluate. Can take values : flesch, dchall, gfog, ari')
 args = parser.parse_args()
 
 docComplexityObj = DocumentComplexity(args.inputDoc)
+metric = args.metric
 
-############ Flesch Reading Ease Score ##################
-fleschReadingEase = docComplexityObj.fleschReadingScore()
-print("Flesch Reading Ease Score : ",fleschReadingEase)
+if metric == 'flesch':
+    method = 'Flesch Readability Ease'
+    score = docComplexityObj.fleschReadingScore()
+    grade = docComplexityObj.fleschReadingGrade(score)
+elif metric == 'dchall':
+    method = 'Dale Chall Readability'
+    score = docComplexityObj.daleChallReadabilityScore()
+    grade = docComplexityObj.daleChallReadabilityGrade(score)
+elif metric == 'gfog':
+    method = 'Gunning Fog'
+    score = docComplexityObj.gunningFogScore()
+    grade = docComplexityObj.gunningFogGrade(score)
+elif metric == 'ari':
+    method = 'Automated Readability Index'
+    score = docComplexityObj.automatedReadabilityIndex()
+    grade = docComplexityObj.automatedReadabilityGrade(score)
 
-if fleschReadingEase >= 90:
-    print('5th grade or lower')
-elif fleschReadingEase >=80 and fleschReadingEase < 90:
-    print('6th grade')
-elif fleschReadingEase >= 70 and fleschReadingEase < 80:
-    print('7th grade')
-elif fleschReadingEase >= 60 and fleschReadingEase < 70:
-    print('8th and 9th grade')
-elif fleschReadingEase >= 50 and fleschReadingEase < 60:
-    print('10th to 12th grade')
-elif fleschReadingEase >= 30 and fleschReadingEase < 50:
-    print('College Student')
-else:
-    print('College graduate')
-
-
-############ Dale Chall Reading Score ##################
-daleChallReadingScore = docComplexityObj.daleChallReadabilityScore()
-print("Dale Chall Reading Score : ", daleChallReadingScore)
-
-if daleChallReadingScore >= 9:
-    print('College Student')
-elif daleChallReadingScore >=8 and daleChallReadingScore < 9:
-    print('11th to 12th grade')
-elif daleChallReadingScore >= 7 and daleChallReadingScore < 8:
-    print('9th to 10th grade')
-elif daleChallReadingScore >= 6 and daleChallReadingScore < 7:
-    print('7th to 8th grade')
-elif daleChallReadingScore >= 5 and daleChallReadingScore < 6:
-    print('5th to 6th grade')
-else:
-    print('4th grade and lower')
-
-############ Gunning Fog Score ###########################
-fogScore = docComplexityObj.gunningFogScore()
-print('Gunning Fog Score : ', fogScore)
-if fogScore >= 17:
-    print('College graduate')
-elif fogScore >=13 and fogScore < 17:
-    print('College student')
-elif fogScore >= 9 and fogScore < 12:
-    print('High School student')
-elif fogScore >= 8 and fogScore < 9:
-    print('8th grade')
-elif fogScore >= 7 and fogScore < 8:
-    print('7th grade')
-else:
-    print('6th grade and lower')
-
-
-############ Automated Readbility Index #####################
-automatedRI = docComplexityObj.automatedReadabilityIndex()
-print('Automated Readability Index', automatedRI)
-if automatedRI >= 14:
-    print('Professor')
-elif automatedRI >=13 and automatedRI < 14:
-    print('College student')
-elif automatedRI >=10  and automatedRI < 13:
-    print('10th to 12th grade')
-elif automatedRI >= 7 and automatedRI < 10:
-    print('7th to 9th grade')
-elif automatedRI >= 5 and automatedRI < 7:
-    print('5th to 6th grade')
-else:
-    print('4th grade and lower')
+print('Score : ', score)
+print('Grade : ', grade)
+print('Method : ', method)
