@@ -23,7 +23,7 @@ This module aims in finding complexity score of a document. Complexity score, he
  ```
 
 3. Navigate to project root folder and run ``` pip install -r requirements.txt```
-4. Run ``` python setEnv.py ```
+4. Run ``` python setEnv.py ``` to download necessary files for the application.
 
 ## Running the application
 
