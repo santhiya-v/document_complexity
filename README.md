@@ -13,6 +13,9 @@ This module aims in finding complexity score of a document. Complexity score, he
 | 4 | College Student    |  
 | 5 | College Graduate and higher    |  
 
+## Demo Web App
+[Click here](https://text-complexity.herokuapp.com)
+
 ## Installation
 
 1. Clone or download the repository.
