@@ -46,4 +46,7 @@ python main.py --inputDoc {path/to/txtfile}
 python main.py --inputDoc {path/to/txtfile} --metric {flesch|gfog|ari}
 ```
 
+## Screenshot of console app
+
+[screenshot]: https://github.com/santhiya-v/document_complexity/blob/master/console.png
 
