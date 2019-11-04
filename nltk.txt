@@ -1,0 +1,2 @@
+cmudict
+averaged_perceptron_tagger
